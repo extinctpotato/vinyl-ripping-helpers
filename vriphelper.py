@@ -35,7 +35,6 @@ def __optional_filename(suffix: str, input_path: Path, output_path: Optional[Pat
             )
 
 def __parse_args():
-    import argparse, sys
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
