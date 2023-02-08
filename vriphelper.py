@@ -3,14 +3,14 @@ import sox
 from pathlib import Path
 from typing import Optional
 
-def premaster_single_track(input_path: Path, output_path: Path):
+def premaster_single_track(input_path: Path, output_path: Path, threshold_subtrahend: int):
     tfm = sox.Transformer()
 
     for trim_location in [1, -1]:
         # Let the track ending ring out.
         if trim_location == 1:
             pad = 0.2
-            thr = 7.0
+            thr = 7.0 - threshold_subtrahend
         else:
             pad = 2
             thr = 3.0
@@ -44,8 +44,9 @@ def __parse_args():
     parser.add_argument("output", type=Path, nargs='?', default=None)
 
     premaster = subparsers.add_parser("premaster_single_track")
+    premaster.add_argument("--sub", type=int, default=0)
     premaster.set_defaults(
-            func=lambda x: premaster_single_track(x.input, __optional_filename("__premaster", x.input, x.output))
+            func=lambda x: premaster_single_track(x.input, __optional_filename("__premaster", x.input, x.output), x.sub)
             )
 
     if len(sys.argv) == 1:
