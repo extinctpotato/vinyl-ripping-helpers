@@ -1,5 +1,5 @@
 import argparse, sys
-import sox
+import sox, pyflac
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +29,14 @@ def premaster_single_track(input_path: Path, output_path: Path, threshold_subtra
     tfm.build_file(str(input_path), str(output_path))
     return tfm.effects_log
 
+def wav_to_flac(input_path: Path):
+    pyflac.FileEncoder(
+            input_path,
+            input_path.with_suffix(".flac"),
+            compression_level=8,
+            streamable_subset=False
+            ).process()
+
 def __optional_filename(suffix: str, input_path: Path, output_path: Optional[Path] = None) -> Path:
     return output_path or input_path.parent.joinpath(
             input_path.stem + suffix + input_path.suffix
@@ -46,6 +54,11 @@ def __parse_args():
     premaster.add_argument("--sub", type=int, default=0)
     premaster.set_defaults(
             func=lambda x: premaster_single_track(x.input, __optional_filename("__premaster", x.input, x.output), x.sub)
+            )
+
+    flacify = subparsers.add_parser("flacify")
+    flacify.set_defaults(
+            func=lambda x: wav_to_flac(x.input)
             )
 
     if len(sys.argv) == 1:
