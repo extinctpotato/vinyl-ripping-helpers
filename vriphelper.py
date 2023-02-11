@@ -41,15 +41,19 @@ def __parse_args():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
-    # Common positional arguments go here.
-    parser.add_argument("input", type=Path)
-    parser.add_argument("output", type=Path, nargs='?', default=None)
+    def __premaster_func(args):
+        for input_file in args.input:
+            print(f'Processing {input_file}...')
+            premaster_single_track(
+                    input_file,
+                    __optional_filename("__premaster", input_file),
+                    args.sub
+                    )
 
     premaster = subparsers.add_parser("premaster_single_track")
     premaster.add_argument("--sub", type=int, default=0)
-    premaster.set_defaults(
-            func=lambda x: premaster_single_track(x.input, __optional_filename("__premaster", x.input, x.output), x.sub)
-            )
+    premaster.add_argument("input", type=Path, nargs='+')
+    premaster.set_defaults(func=__premaster_func)
 
     if len(sys.argv) == 1:
         parser.print_help()
