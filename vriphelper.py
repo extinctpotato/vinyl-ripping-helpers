@@ -1,9 +1,99 @@
 #!/usr/bin/env python3
 
-import argparse, sys
+import argparse, sys, warnings
 import sox
 from pathlib import Path
-from typing import Optional
+from mutagen.flac import FLAC
+from typing import Optional, List
+from enum import Enum
+
+EXFAT_INVALID_CHARS = [hex(_c_char) for _c_char in range(0,32)] \
+        + [hex(ord(_c)) for _c in ['"', '*', '/', ':', '<', '>', '?', '\\', '|']]
+
+def exfat_str_warning(func):
+    def __inner(*args, **kwargs):
+        # Take the last argument to account for 'self'
+        s = args[-1]
+        for character in s:
+            if hex(ord(character)) in EXFAT_INVALID_CHARS:
+                warnings.warn(f"String {s} contains {character} which is not a valid exFAT filename character")
+        return func(*args, **kwargs)
+    return __inner
+
+def load_flac_files(input_path: Path) -> List[FLAC]:
+    files = [input_path]
+    if input_path.is_dir():
+        files = input_path.glob("*.flac")
+
+    return [FLAC(p) for p in sorted(files)]
+
+class TaggableProject:
+    def __init__(self, input_path: Path):
+        self._files = load_flac_files(input_path)
+
+        if len(self._files) > 1:
+            self._fname_fmt = "{tracknumber:02d} {title}"
+        else:
+            self._fname_fmt = "{artist} - {title}"
+
+    @property
+    def files(self) -> List[FLAC]:
+        return self._files
+
+    @property
+    def filename_format(self) -> str:
+        return self._fname_fmt
+
+    @exfat_str_warning
+    def set_common_artist(self, a: str):
+        for idx, _ in enumerate(self.files):
+            self.set_artist(idx, a)
+
+    def set_common_year(self, y: int):
+        for f in self.files:
+            f["date"] = str(y)
+
+    def set_artist(self, idx: int, a: str):
+        self.files[idx]["artist"] = a
+
+    @exfat_str_warning
+    def set_title(self, idx: int, t: str):
+        self.files[idx]["title"] = t
+
+    def set_album(self, idx: int, al: str):
+        self.files[idx]["album"] = al
+
+    def set_track_numbers(self):
+        for idx, _ in enumerate(self._files):
+            self.set_track_number(idx, idx+1)
+
+    def set_track_number(self, idx: int, n: int):
+        self.files[idx]["tracknumber"] = int(n)
+
+    def get_formatted_filename(self, idx: int):
+        return self._fname_fmt.format(
+                **{t[0]: t[1] for t in self._files[idx].tags}
+                )
+
+    def rename_files(self):
+        for idx, f in enumerate(self._files):
+            f_path = Path(f.filename)
+            f_path.rename(f_path.with_stem(self.get_formatted_filename(idx)))
+
+    def commit(self):
+        for f in self._files:
+            f.save()
+
+
+def ask_for_tags(input_path: Path):
+    print(input_path)
+    t = TaggableProject(input_path)
+
+    print(f"Input path:\t {input_path}")
+    print(f"Loaded {len(t.files)} file(s).")
+
+    for f in t.files:
+        print(f"Processing {f.filename}")
 
 def premaster_single_track(input_path: Path, output_path: Path, threshold_subtrahend: int):
     tfm = sox.Transformer()
@@ -56,6 +146,10 @@ def __parse_args():
     premaster.add_argument("--sub", type=int, default=0)
     premaster.add_argument("input", type=Path, nargs='+')
     premaster.set_defaults(func=__premaster_func)
+
+    tagger = subparsers.add_parser("tag_wizard")
+    tagger.add_argument("input", type=Path)
+    tagger.set_defaults(func=lambda x: ask_for_tags(x.input))
 
     if len(sys.argv) == 1:
         parser.print_help()
