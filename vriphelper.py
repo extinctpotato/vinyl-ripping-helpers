@@ -5,7 +5,7 @@ import pyinputplus as pyip
 import sox
 from pathlib import Path
 from mutagen.flac import FLAC
-from typing import Optional, List
+from typing import Optional, List, Any
 from enum import Enum
 
 EXFAT_INVALID_CHARS = [hex(_c_char) for _c_char in range(0,32)] \
@@ -85,6 +85,34 @@ class TaggableProject:
         for f in self._files:
             f.save()
 
+class Backwardable:
+    def __init__(self, l: List[Any]):
+        self._l = l
+        self.pos = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.pos == len(self._l):
+            raise StopIteration
+
+        ret = self._l[self.pos]
+        self.pos += 1
+
+        return ret
+
+    def __len__(self):
+        return len(self._l)
+
+    def rewind(self):
+        self.pos -= 0
+
+    def queue_repeat(self):
+        self.pos -= 1
+
+    def queue_previous(self):
+        self.pos -= 2
 
 def ask_for_tags(input_path: Path):
     t = TaggableProject(input_path)
