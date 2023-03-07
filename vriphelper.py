@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse, sys, warnings
+import pyinputplus as pyip
 import sox
 from pathlib import Path
 from mutagen.flac import FLAC
@@ -86,11 +87,14 @@ class TaggableProject:
 
 
 def ask_for_tags(input_path: Path):
-    print(input_path)
     t = TaggableProject(input_path)
 
     print(f"Input path:\t {input_path}")
     print(f"Loaded {len(t.files)} file(s).")
+
+    if (common_artist := pyip.inputStr("Provide a common artist for all tracks (leave empty if unapplicable): ", blank=True)):
+        t.set_common_artist(common_artist)
+        print(f"Set '{common_artist}' for all tracks.")
 
     for f in t.files:
         print(f"Processing {f.filename}")
