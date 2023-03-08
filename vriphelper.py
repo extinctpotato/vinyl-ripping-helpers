@@ -135,9 +135,26 @@ def ask_for_tags(input_path: Path):
     print(f"Input path:\t {input_path}")
     print(f"Loaded {len(t.files)} file(s).")
 
-    if (common_artist := pyip.inputStr("Provide a common artist for all tracks (leave empty if unapplicable): ", blank=True)):
-        t.set_common_artist(common_artist)
-        print(f"Set '{common_artist}' for all tracks.")
+    def __common_artist():
+        if (common_artist := pyip.inputStr("Provide a common artist for all tracks (leave empty if unapplicable): ", blank=True)):
+            t.set_common_artist(common_artist)
+            print(f"Set '{common_artist}' for all tracks.")
+
+    def __common_year():
+        if (common_year := pyip.inputInt(f"When was this {t.release_type} released? ")):
+            t.set_common_year(common_year)
+            print(f"Set {common_year} as the release year.")
+
+    b = Backwardable([__common_artist, __common_year])
+
+    for func in b:
+        func()
+        if (next_action := pyip.inputMenu(['next', 'previous', 'repeat'], lettered=True)) == 'next':
+            continue
+        elif next_action == 'previous':
+            b.queue_previous()
+        elif next_action == 'repeat':
+            b.queue_repeat()
 
     for f in t.files:
         print(f"Processing {f.filename}")
