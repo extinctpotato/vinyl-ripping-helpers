@@ -136,18 +136,21 @@ def ask_for_tags(input_path: Path):
     print(f"Loaded {len(t.files)} file(s).")
 
     def __common_artist():
-        if (common_artist := pyip.inputStr("Provide a common artist for all tracks (leave empty if unapplicable): ", blank=True)):
+        current_value = t.get_common_key("artist")
+        if (common_artist := pyip.inputStr(f"Provide a common artist for all tracks (leave empty if unapplicable) [{current_value}]: ", blank=True)):
             t.set_common_artist(common_artist)
             print(f"Set '{common_artist}' for all tracks.")
 
     def __common_year():
-        if (common_year := pyip.inputInt(f"When was this {t.release_type} released? ")):
+        current_value = t.get_common_key("date")
+        if (common_year := pyip.inputInt(f"When was this {t.release_type} released? [{current_value}] ", blank=bool(current_value))):
             t.set_common_year(common_year)
             print(f"Set {common_year} as the release year.")
 
     b = Backwardable([__common_artist, __common_year])
 
     for func in b:
+        print(f"Running question {b.pos}/{len(b)}")
         func()
         if (next_action := pyip.inputMenu(['next', 'previous', 'repeat'], lettered=True)) == 'next':
             continue
