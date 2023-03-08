@@ -34,8 +34,14 @@ class TaggableProject:
 
         if len(self._files) > 1:
             self._fname_fmt = "{tracknumber:02d} {title}"
+            self._release_type = "album/EP"
         else:
             self._fname_fmt = "{artist} - {title}"
+            self._release_type = "single"
+
+    @property
+    def release_type(self) -> str:
+        return self._release_type
 
     @property
     def files(self) -> List[FLAC]:
