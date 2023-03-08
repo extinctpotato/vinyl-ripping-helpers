@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, sys, warnings
+import argparse, sys, warnings, itertools
 import pyinputplus as pyip
 import sox
 from pathlib import Path
@@ -76,6 +76,15 @@ class TaggableProject:
 
     def set_track_number(self, idx: int, n: int):
         self.files[idx]["tracknumber"] = int(n)
+
+    def get_common_key(self, key) -> str:
+        try:
+            vals = list(itertools.chain(*[v.tags.get(key) for v in self._files]))
+        except TypeError: # key does not exist
+            return None
+
+        if len(set(vals)) == 1:
+            return vals[0]
 
     def get_formatted_filename(self, idx: int):
         return self._fname_fmt.format(
