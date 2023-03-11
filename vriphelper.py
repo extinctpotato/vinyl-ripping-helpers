@@ -147,8 +147,31 @@ def ask_for_tags(input_path: Path):
             t.set_common_year(common_year)
             print(f"Set {common_year} as the release year.")
 
-    b = Backwardable([__common_artist, __common_year])
+    def __set_artist_gen(idx: int):
+        def __inner():
+            current_value = t.files[idx].get("artist")
+            if (v := pyip.inputStr(f"[{t.files[idx].filename}]\t Artist name: ({current_value})", blank=True)):
+                t.set_artist(idx, v)
+        return __inner
 
+    def __set_title_gen(idx: int):
+        def __inner():
+            current_value = t.files[idx].get("title")
+            if (v := pyip.inputStr(f"[{t.files[idx].filename}]\t Title: ({current_value})", blank=True)):
+                t.set_title(idx, v)
+        return __inner
+
+    def __should_commit():
+        if pyip.inputBool("Should we commit? "):
+            t.commit()
+
+    wizard_queries = [__common_artist, __common_year]
+    for f_idx, _ in enumerate(t.files):
+        for gen in [__set_artist_gen, __set_title_gen]:
+            wizard_queries.append(gen(f_idx))
+    wizard_queries.append(__should_commit)
+
+    b = Backwardable(wizard_queries)
     for func in b:
         print(f"Running question {b.pos}/{len(b)}")
         func()
@@ -159,8 +182,6 @@ def ask_for_tags(input_path: Path):
         elif next_action == 'repeat':
             b.queue_repeat()
 
-    for f in t.files:
-        print(f"Processing {f.filename}")
 
 def premaster_single_track(input_path: Path, output_path: Path, threshold_subtrahend: int):
     tfm = sox.Transformer()
