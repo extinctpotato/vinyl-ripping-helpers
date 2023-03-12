@@ -56,6 +56,10 @@ class TaggableProject:
         for idx, _ in enumerate(self.files):
             self.set_artist(idx, a)
 
+    def set_common_album(self, a: str):
+        for idx, _ in enumerate(self.files):
+            self.set_album(idx, a)
+
     def set_common_year(self, y: int):
         for f in self.files:
             f["date"] = str(y)
@@ -147,6 +151,12 @@ def ask_for_tags(input_path: Path):
             t.set_common_year(common_year)
             print(f"Set {common_year} as the release year.")
 
+    def __common_album():
+        current_value = t.get_common_key("album")
+        if (common_album := pyip.inputStr(f"Provide a common album for all tracks (leave empty if unapplicable) [{current_value}]: ", blank=True)):
+            t.set_common_album(common_album)
+            print(f"Set '{common_album}' for all tracks.")
+
     def __set_artist_gen(idx: int):
         def __inner():
             if t.get_common_key("artist"):
@@ -169,7 +179,7 @@ def ask_for_tags(input_path: Path):
         if pyip.inputBool("Should we commit? "):
             t.commit()
 
-    wizard_queries = [__common_artist, __common_year]
+    wizard_queries = [__common_artist, __common_album, __common_year]
     for f_idx, _ in enumerate(t.files):
         for gen in [__set_artist_gen, __set_title_gen]:
             wizard_queries.append(gen(f_idx))
