@@ -7,6 +7,7 @@ from pathlib import Path
 from mutagen.flac import FLAC
 from typing import Optional, List, Any
 from enum import Enum
+from prettytable import PrettyTable
 
 EXFAT_INVALID_CHARS = [hex(_c_char) for _c_char in range(0,32)] \
         + [hex(ord(_c)) for _c in ['"', '*', '/', ':', '<', '>', '?', '\\', '|']]
@@ -179,7 +180,20 @@ def ask_for_tags(input_path: Path):
         if pyip.inputBool("Should we commit? "):
             t.commit()
 
-    wizard_queries = [__common_artist, __common_album, __common_year]
+    def __should_set_tracks():
+        file_table = PrettyTable()
+        file_table.field_names = ["Track number", "File name"]
+        file_table.add_rows(enumerate([tr.filename for tr in t.files], 1))
+
+        if (v := pyip.inputBool('Does this mapping make sense?'+'\n'+str(file_table)+'\n')):
+            t.set_track_numbers()
+
+    wizard_queries = [
+            __common_artist,
+            __common_album,
+            __common_year,
+            __should_set_tracks
+            ]
     for f_idx, _ in enumerate(t.files):
         for gen in [__set_artist_gen, __set_title_gen]:
             wizard_queries.append(gen(f_idx))
