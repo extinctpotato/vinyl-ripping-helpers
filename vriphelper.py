@@ -149,6 +149,10 @@ def ask_for_tags(input_path: Path):
 
     def __set_artist_gen(idx: int):
         def __inner():
+            if t.get_common_key("artist"):
+                print(f"[{t.files[idx].filename}] Common artist has already been set, skipping.")
+                return True
+
             current_value = t.files[idx].get("artist")
             if (v := pyip.inputStr(f"[{t.files[idx].filename}]\t Artist name: ({current_value})", blank=True)):
                 t.set_artist(idx, v)
@@ -172,16 +176,25 @@ def ask_for_tags(input_path: Path):
     wizard_queries.append(__should_commit)
 
     b = Backwardable(wizard_queries)
+    prev_enq = False
     for func in b:
         print(f"Running question {b.pos}/{len(b)}")
-        func()
-        if (next_action := pyip.inputMenu(['next', 'previous', 'repeat'], lettered=True)) == 'next':
+        was_skipped = func()
+
+        if was_skipped:
+            if prev_enq:
+                b.queue_previous()
             continue
+
+        prev_enq = False
+
+        if (next_action := pyip.inputMenu(['next', 'previous', 'repeat'], lettered=True)) == 'next':
+            pass
         elif next_action == 'previous':
             b.queue_previous()
+            prev_enq = True
         elif next_action == 'repeat':
             b.queue_repeat()
-
 
 def premaster_single_track(input_path: Path, output_path: Path, threshold_subtrahend: int):
     tfm = sox.Transformer()
