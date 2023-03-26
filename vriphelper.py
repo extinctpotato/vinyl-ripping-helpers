@@ -3,6 +3,7 @@
 import argparse, sys, warnings, itertools
 import pyinputplus as pyip
 import sox
+import tty, termios, os # for non-portable getch
 from pathlib import Path
 from mutagen.flac import FLAC
 from typing import Optional, List, Any
@@ -28,6 +29,20 @@ def load_flac_files(input_path: Path) -> List[FLAC]:
         files = input_path.glob("*.flac")
 
     return [FLAC(p) for p in sorted(files)]
+
+def getch() -> str:
+    fd = 0
+    old_term_attr = tty.tcgetattr(fd)
+
+    try:
+        term_attr = tty.tcgetattr(fd)
+        term_attr[tty.LFLAG] &= ~(tty.ECHO | tty.ICANON)
+        term_attr[tty.CC][tty.VMIN] = 3
+        term_attr[tty.CC][tty.VTIME] = 1
+        tty.tcsetattr(fd, tty.TCSAFLUSH, term_attr)
+        return os.read(fd, 3)
+    finally:
+        tty.tcsetattr(fd, tty.TCSADRAIN, old_term_attr)
 
 class TaggableProject:
     def __init__(self, input_path: Path):
