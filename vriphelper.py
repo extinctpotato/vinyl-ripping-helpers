@@ -8,7 +8,9 @@ from pathlib import Path
 from mutagen.flac import FLAC
 from typing import Optional, List, Any
 from enum import Enum
-from prettytable import PrettyTable
+import rich # for ReorderableTable
+from rich.console import Console # for ReorderableTable
+from rich.table import Table # for ReorderableTable
 
 EXFAT_INVALID_CHARS = [hex(_c_char) for _c_char in range(0,32)] \
         + [hex(ord(_c)) for _c in ['"', '*', '/', ':', '<', '>', '?', '\\', '|']]
@@ -149,6 +151,74 @@ class Backwardable:
     def queue_previous(self):
         self.pos -= 2
 
+class ReorderableTable:
+    class Keys(Enum):
+        UP    = bytes("\x1b[A", 'ascii')
+        DOWN  = bytes("\x1b[B", 'ascii')
+        SPACE = bytes(" ", 'ascii')
+
+    def __init__(self, title: str, columns: List[str], rows: List[list]):
+        self.title = title
+        self.columns = columns
+        self.rows = rows
+
+        self._current_idx = 0
+        self._selected = False
+        self._initialized = False
+        self._console = Console()
+
+    def _get_table(self):
+        t = Table(title=self.title, title_style="", box=rich.box.HORIZONTALS)
+
+        for idx, column in enumerate(self.columns):
+            t.add_column(
+                    column,
+                    justify="right" if idx in [0, len(self.columns)] else "",
+                    no_wrap=True if idx == 0 else False
+                    )
+
+        for idx, row in enumerate(self.rows):
+            row_style = ""
+            if idx == self._current_idx:
+                if self._selected:
+                    row_style = "black on yellow"
+                else:
+                    row_style = "on green"
+
+            t.add_row(*row, style=row_style)
+
+        return t
+
+    def inquire(self):
+        while True:
+            if self._initialized:
+                for i in range(0, len(self.rows)+5):
+                    sys.stdout.write(chr(27) + "[1A") # move cursor up one line
+                    sys.stdout.write(chr(27) + "[K") # clear the line
+
+            self._console.print(self._get_table())
+            self._initialized = True
+
+            try:
+                key = getch()
+            except KeyboardInterrupt:
+                break
+
+            if key == self.Keys.UP.value and self._current_idx != 0:
+                self._current_idx -= 1
+                if self._selected:
+                    self.rows.insert(
+                            self._current_idx, self.rows.pop(self._current_idx + 1)
+                            )
+            elif key == self.Keys.DOWN.value and self._current_idx < len(self.rows) - 1:
+                self._current_idx += 1
+                if self._selected:
+                    self.rows.insert(
+                            self._current_idx, self.rows.pop(self._current_idx - 1)
+                            )
+            elif key == self.Keys.SPACE.value:
+                self._selected = not self._selected
+
 def ask_for_tags(input_path: Path):
     t = TaggableProject(input_path)
 
@@ -269,6 +339,20 @@ def __optional_filename(suffix: str, input_path: Path, output_path: Optional[Pat
             input_path.stem + suffix + input_path.suffix
             )
 
+def reorder_test():
+    t = ReorderableTable(
+            title="Star Wars Movies",
+            columns=["Released", "Title", "Box Office"],
+            rows=[
+                ["Dec 20, 2019", "Star Wars: The Rise of Skywalker", "$952,110,690"],
+                ["May 25, 2018", "Solo: A Star Wars Story", "$393,151,347"],
+                ["Dec 15, 2017", "Star Wars Ep. V111: The Last Jedi", "$1,332,539,889"],
+                ["Dec 16, 2016", "Rogue One: A Star Wars Story", "$1,332,439,889"],
+                ]
+            )
+    t.inquire()
+    return t.rows
+
 def __parse_args():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
@@ -290,6 +374,9 @@ def __parse_args():
     tagger = subparsers.add_parser("tag_wizard")
     tagger.add_argument("input", type=Path)
     tagger.set_defaults(func=lambda x: ask_for_tags(x.input))
+
+    reorder = subparsers.add_parser("reorder")
+    reorder.set_defaults(func=lambda x: print(reorder_test()))
 
     if len(sys.argv) == 1:
         parser.print_help()
