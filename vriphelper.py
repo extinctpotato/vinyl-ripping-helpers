@@ -57,6 +57,11 @@ class TaggableProject:
             self._fname_fmt = "{artist} - {title}"
             self._release_type = "single"
 
+    def sort_files(self):
+        self._files.sort(
+                key=lambda t: int(t["tracknumber"][0])
+                )
+
     @property
     def release_type(self) -> str:
         return self._release_type
