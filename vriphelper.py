@@ -271,12 +271,17 @@ def ask_for_tags(input_path: Path):
             t.commit()
 
     def __should_set_tracks():
-        file_table = PrettyTable()
-        file_table.field_names = ["Track number", "File name"]
-        file_table.add_rows(enumerate([tr.filename for tr in t.files], 1))
+        file_table = ReorderableTable(
+                title=t.get_common_key("artist") + " - " + t.get_common_key("album"),
+                columns=["Track number", "File name"],
+                rows=enumerate([tr.filename for tr in t.files], 1)
+                )
+        file_table.inquire()
 
-        if (v := pyip.inputBool('Does this mapping make sense?'+'\n'+str(file_table)+'\n')):
-            t.set_track_numbers()
+        for idx, row in enumerate(file_table.rows):
+            t.set_track_number(int(row[0]) - 1, idx)
+
+        t.sort_files()
 
     wizard_queries = [
             __common_artist,
