@@ -274,7 +274,7 @@ def ask_for_tags(input_path: Path):
         file_table = ReorderableTable(
                 title=t.get_common_key("artist") + " - " + t.get_common_key("album"),
                 columns=["Track number", "File name"],
-                rows=enumerate([tr.filename for tr in t.files], 1)
+                rows=enumerate([os.path.basename(tr.filename) for tr in t.files], 1)
                 )
         file_table.inquire()
 
