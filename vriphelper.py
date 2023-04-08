@@ -165,7 +165,7 @@ class ReorderableTable:
     def __init__(self, title: str, columns: List[str], rows: List[list]):
         self.title = title
         self.columns = columns
-        self.rows = rows
+        self.rows = list(rows)
 
         self._current_idx = 0
         self._selected = False
@@ -190,7 +190,7 @@ class ReorderableTable:
                 else:
                     row_style = "on green"
 
-            t.add_row(*row, style=row_style)
+            t.add_row(*[str(e) for e in row], style=row_style)
 
         return t
 
