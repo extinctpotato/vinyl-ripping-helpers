@@ -283,6 +283,10 @@ def ask_for_tags(input_path: Path):
 
         t.sort_files()
 
+    def __should_rename():
+        for idx, _ in enumerate(t.files):
+            print(f"[{idx}]: {t.get_formatted_filename(idx)}")
+
     wizard_queries = [
             __common_artist,
             __common_album,
@@ -292,6 +296,7 @@ def ask_for_tags(input_path: Path):
     for f_idx, _ in enumerate(t.files):
         for gen in [__set_artist_gen, __set_title_gen]:
             wizard_queries.append(gen(f_idx))
+    wizard_queries.append(__should_rename)
     wizard_queries.append(__should_commit)
 
     b = Backwardable(wizard_queries)
