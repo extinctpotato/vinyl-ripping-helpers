@@ -1,6 +1,7 @@
 import pyinputplus as pyip
 from pathlib import Path
 from vriphelper.tags import TaggableProject
+from vriphelper.term import ReorderableTable
 from vriphelper.misc import Backwardable
 
 def ask_for_tags(input_path: Path):
