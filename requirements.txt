@@ -1,2 +1,6 @@
+mutagen==1.46.0
 numpy==1.24.2
+PyInputPlus==0.2.12
+PySimpleValidate==0.2.12
 sox==1.4.1
+stdiomask==0.0.6
