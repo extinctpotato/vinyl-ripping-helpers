@@ -65,7 +65,10 @@ def ask_for_tags(input_path: Path):
 
     def __should_rename():
         for idx, _ in enumerate(t.files):
-            print(f"[{idx}]: {t.get_formatted_filename(idx)}")
+            try:
+                print(f"[{idx}]: {t.get_formatted_filename(idx)}")
+            except ValueError as e:
+                print(f"[{idx}]: EXCEPTION! {e}")
 
     wizard_queries = [
             __common_artist,
