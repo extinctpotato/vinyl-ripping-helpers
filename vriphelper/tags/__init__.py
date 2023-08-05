@@ -81,8 +81,8 @@ class TaggableProject:
         for idx, _ in enumerate(self._files):
             self.set_track_number(idx, idx+1)
 
-    def set_track_number(self, idx: int, n: int):
-        self.files[idx]["tracknumber"] = str(n)
+    def set_track_number(self, idx: int, n: int, offset: int = 1):
+        self.files[idx]["tracknumber"] = str(n+1)
 
     def get_common_key(self, key) -> str:
         try:
