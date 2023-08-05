@@ -9,7 +9,22 @@ def load_flac_files(input_path: Path) -> List[FLAC]:
     if input_path.is_dir():
         files = input_path.glob("*.flac")
 
-    return [FLAC(p) for p in sorted(files)]
+    return [TypedFLAC(p) for p in sorted(files)]
+
+class TypedFLAC(FLAC):
+    def __getitem__(self, key):
+        """Look up a metadata tag key.
+
+        If the file has no tags at all, a KeyError is raised.
+        """
+
+        if self.tags is None:
+            raise KeyError(key)
+        else:
+            ret = self.tags[key][0]
+            if key == "tracknumber":
+                ret = int(ret)
+            return [ret]
 
 class TaggableProject:
     def __init__(self, input_path: Path):
@@ -80,7 +95,7 @@ class TaggableProject:
 
     def get_formatted_filename(self, idx: int):
         return self._fname_fmt.format(
-                **{t[0]: t[1] for t in self._files[idx].tags}
+                **{t: self._files[idx][t][0] for t in self._files[idx].keys()}
                 )
 
     def rename_files(self):
