@@ -69,6 +69,8 @@ def ask_for_tags(input_path: Path):
                 print(f"[{idx}]: {t.get_formatted_filename(idx)}")
             except ValueError as e:
                 print(f"[{idx}]: EXCEPTION! {e}")
+        if pyip.inputBool("Should we rename? "):
+            t.rename_files()
 
     wizard_queries = [
             __common_artist,
@@ -79,8 +81,8 @@ def ask_for_tags(input_path: Path):
     for f_idx, _ in enumerate(t.files):
         for gen in [__set_artist_gen, __set_title_gen]:
             wizard_queries.append(gen(f_idx))
-    wizard_queries.append(__should_rename)
     wizard_queries.append(__should_commit)
+    wizard_queries.append(__should_rename)
 
     b = Backwardable(wizard_queries)
     prev_enq = False
